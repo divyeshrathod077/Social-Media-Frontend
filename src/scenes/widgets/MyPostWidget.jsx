@@ -1,12 +1,10 @@
 import {
   EditOutlined,
   DeleteOutlined,
-  AttachFileOutlined,
-  GifBoxOutlined,
   ImageOutlined,
-  MicOutlined,
-  MoreHorizOutlined,
+  VideocamOutlined,
 } from "@mui/icons-material";
+
 import {
   Box,
   Divider,
@@ -16,45 +14,83 @@ import {
   Button,
   IconButton,
   useMediaQuery,
+  LinearProgress, // 🔥 added
 } from "@mui/material";
+
 import FlexBetween from "components/FlexBetween";
 import Dropzone from "react-dropzone";
 import UserImage from "components/UserImage";
 import WidgetWrapper from "components/WidgetWrapper";
+
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setPosts } from "state";
 
 const MyPostWidget = ({ picturePath }) => {
   const dispatch = useDispatch();
-  const [isImage, setIsImage] = useState(false);
-  const [image, setImage] = useState(null);
+  const [isMedia, setIsMedia] = useState(false);
+  const [file, setFile] = useState(null);
   const [post, setPost] = useState("");
+
+  // 🔥 NEW STATES
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
   const { palette } = useTheme();
-  const { _id } = useSelector((state) => state.user);
   const token = useSelector((state) => state.token);
-  const isNonMobileScreens = useMediaQuery("(min-width: 1000px)");
-  const mediumMain = palette.neutral.mediumMain;
-  const medium = palette.neutral.medium;
+  const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
 
   const handlePost = async () => {
-    const formData = new FormData();
-    formData.append("userId", _id);
-    formData.append("description", post);
-    if (image) {
-      formData.append("picture", image);
-      formData.append("picturePath", image.name);
-    }
+    try {
+      if (!file && !post) return;
 
-    const response = await fetch(`http://localhost:3001/posts`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-    const posts = await response.json();
-    dispatch(setPosts({ posts }));
-    setImage(null);
-    setPost("");
+      setLoading(true);
+      setProgress(10);
+
+      const isVideo = file?.type?.startsWith("video");
+
+      const url = isVideo
+        ? "http://localhost:3001/posts/create/video"
+        : "http://localhost:3001/posts/create/image";
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("description", post);
+
+      // 🔥 fake progress animation
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev < 90 ? prev + 10 : prev));
+      }, 300);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      clearInterval(interval);
+      setProgress(100);
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error("Upload Error:", text);
+        setLoading(false);
+        return;
+      }
+
+      const posts = await response.json();
+      dispatch(setPosts({ posts }));
+
+      setFile(null);
+      setPost("");
+      setLoading(false);
+      setProgress(0);
+    } catch (err) {
+      console.error("Post Error:", err);
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,97 +109,97 @@ const MyPostWidget = ({ picturePath }) => {
           }}
         />
       </FlexBetween>
-      {isImage && (
-        <Box
-          border={`1px solid ${medium}`}
-          borderRadius="5px"
-          mt="1rem"
-          p="1rem"
-        >
+
+      {isMedia && (
+        <Box mt="1rem">
           <Dropzone
-            acceptedFiles=".jpg,.jpeg,.png"
+            acceptedFiles=".jpg,.jpeg,.png,.mp4,.mov"
             multiple={false}
-            onDrop={(acceptedFiles) => setImage(acceptedFiles[0])}
+            onDrop={(files) => setFile(files[0])}
           >
             {({ getRootProps, getInputProps }) => (
-              <FlexBetween>
-                <Box
-                  {...getRootProps()}
-                  border={`2px dashed ${palette.primary.main}`}
-                  p="1rem"
-                  width="100%"
-                  sx={{ "&:hover": { cursor: "pointer" } }}
-                >
-                  <input {...getInputProps()} />
-                  {!image ? (
-                    <p>Add Image Here</p>
-                  ) : (
-                    <FlexBetween>
-                      <Typography>{image.name}</Typography>
-                      <EditOutlined />
-                    </FlexBetween>
-                  )}
-                </Box>
-                {image && (
-                  <IconButton
-                    onClick={() => setImage(null)}
-                    sx={{ width: "15%" }}
-                  >
-                    <DeleteOutlined />
-                  </IconButton>
+              <Box
+                {...getRootProps()}
+                border={`2px dashed ${palette.primary.main}`}
+                p="1rem"
+                sx={{ cursor: "pointer" }}
+              >
+                <input {...getInputProps()} />
+
+                {!file ? (
+                  <p>Add Image or Video</p>
+                ) : (
+                  <FlexBetween>
+                    <Typography>{file.name}</Typography>
+                    <EditOutlined />
+                  </FlexBetween>
                 )}
-              </FlexBetween>
+              </Box>
             )}
           </Dropzone>
+
+          {/* 🔥 PREVIEW */}
+          {file && (
+            <Box mt="1rem">
+              {file.type.startsWith("image") ? (
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt="preview"
+                  width="100%"
+                  style={{ borderRadius: "10px" }}
+                />
+              ) : (
+                <video
+                  src={URL.createObjectURL(file)}
+                  width="100%"
+                  controls
+                  style={{ borderRadius: "10px" }}
+                />
+              )}
+            </Box>
+          )}
+
+          {/* 🔥 PROGRESS BAR */}
+          {loading && (
+            <Box mt="1rem">
+              <LinearProgress variant="determinate" value={progress} />
+              <Typography align="center">{progress}%</Typography>
+            </Box>
+          )}
+
+          {file && (
+            <IconButton onClick={() => setFile(null)}>
+              <DeleteOutlined />
+            </IconButton>
+          )}
         </Box>
       )}
 
-      <Divider sx={{ margin: "1.25rem 0" }} />
+      <Divider sx={{ margin: "1rem 0" }} />
 
       <FlexBetween>
-        <FlexBetween gap="0.25rem" onClick={() => setIsImage(!isImage)}>
-          <ImageOutlined sx={{ color: mediumMain }} />
-          <Typography
-            color={mediumMain}
-            sx={{ "&:hover": { cursor: "pointer", color: medium } }}
-          >
-            Image
-          </Typography>
+        <FlexBetween onClick={() => setIsMedia(!isMedia)}>
+          <ImageOutlined />
+          <Typography>Media</Typography>
         </FlexBetween>
 
-        {isNonMobileScreens ? (
-          <>
-            <FlexBetween gap="0.25rem">
-              <GifBoxOutlined sx={{ color: mediumMain }} />
-              <Typography color={mediumMain}>Clip</Typography>
-            </FlexBetween>
-
-            <FlexBetween gap="0.25rem">
-              <AttachFileOutlined sx={{ color: mediumMain }} />
-              <Typography color={mediumMain}>Attachment</Typography>
-            </FlexBetween>
-
-            <FlexBetween gap="0.25rem">
-              <MicOutlined sx={{ color: mediumMain }} />
-              <Typography color={mediumMain}>Audio</Typography>
-            </FlexBetween>
-          </>
-        ) : (
-          <FlexBetween gap="0.25rem">
-            <MoreHorizOutlined sx={{ color: mediumMain }} />
+        {isNonMobileScreens && (
+          <FlexBetween>
+            <VideocamOutlined />
+            <Typography>Video</Typography>
           </FlexBetween>
         )}
 
         <Button
-          disabled={!post}
+          disabled={loading || (!post && !file)}
           onClick={handlePost}
           sx={{
-            color: palette.background.alt,
             backgroundColor: palette.primary.main,
-            borderRadius: "3rem",
+            color: "#fff",
+            borderRadius: "2rem",
           }}
         >
-          POST
+          {loading ? "Uploading..." : "POST"}
         </Button>
       </FlexBetween>
     </WidgetWrapper>

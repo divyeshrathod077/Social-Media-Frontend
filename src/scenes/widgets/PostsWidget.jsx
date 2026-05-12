@@ -13,6 +13,7 @@ const PostsWidget = ({ userId, isProfile = false }) => {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+
     const data = await response.json();
     dispatch(setPosts({ posts: data }));
   };
@@ -25,6 +26,7 @@ const PostsWidget = ({ userId, isProfile = false }) => {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
+
     const data = await response.json();
     dispatch(setPosts({ posts: data }));
   };
@@ -51,6 +53,7 @@ const PostsWidget = ({ userId, isProfile = false }) => {
           userPicturePath,
           likes,
           comments,
+          videoPath, // 🔥 optional (safe to add)
         }) => (
           <PostWidget
             key={_id}
@@ -60,6 +63,7 @@ const PostsWidget = ({ userId, isProfile = false }) => {
             description={description}
             location={location}
             picturePath={picturePath}
+            videoPath={videoPath} // 🔥 optional
             userPicturePath={userPicturePath}
             likes={likes}
             comments={comments}
