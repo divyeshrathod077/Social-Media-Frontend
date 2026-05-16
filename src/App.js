@@ -4,7 +4,7 @@ import LoginPage from "scenes/loginPage";
 import ProfilePage from "scenes/profilePage";
 
 
-import ChatPage from "scenes/chatPage/index.jsx";
+import ChatPage from "./scenes/chatPage/index.jsx";
 import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { CssBaseline, ThemeProvider } from "@mui/material";
