@@ -29,7 +29,6 @@ import {
   setSocketUsers,
 } from "state";
 
-
 import { socket } from "../../socket";
 
 const ChatPage = () => {
@@ -101,10 +100,8 @@ const ChatPage = () => {
 
     socket.emit(
       "addUser",
-      currentUser._id
+      currentUser?._id
     );
-
-
 
     socket.off("getMessage");
 
@@ -115,8 +112,6 @@ const ChatPage = () => {
         dispatch(addMessage(data));
       }
     );
-
-
 
     socket.off("getUsers");
 
@@ -130,8 +125,6 @@ const ChatPage = () => {
       }
     );
 
-
-
     return () => {
 
       socket.off("getMessage");
@@ -139,7 +132,7 @@ const ChatPage = () => {
       socket.off("getUsers");
     };
 
-  }, []);
+  }, [currentUser?._id, dispatch]);
 
 
 
@@ -178,7 +171,7 @@ const ChatPage = () => {
 
     getReceiver();
 
-  }, [userId]);
+  }, [userId, token]);
 
 
 
@@ -208,7 +201,7 @@ const ChatPage = () => {
 
             body: JSON.stringify({
               senderId:
-                currentUser._id,
+                currentUser?._id,
 
               receiverId:
                 userId,
@@ -228,9 +221,15 @@ const ChatPage = () => {
       }
     };
 
-    createConversation();
+    if (
+      currentUser?._id &&
+      userId
+    ) {
 
-  }, [userId]);
+      createConversation();
+    }
+
+  }, [userId, currentUser?._id, token]);
 
 
 
@@ -273,7 +272,7 @@ const ChatPage = () => {
 
     getMessages();
 
-  }, [conversationId]);
+  }, [conversationId, dispatch, token]);
 
 
 
@@ -310,8 +309,6 @@ const ChatPage = () => {
         text
       );
 
-
-
       if (file) {
 
         formData.append(
@@ -319,8 +316,6 @@ const ChatPage = () => {
           file
         );
       }
-
-
 
       const response =
         await axios.post(
@@ -353,25 +348,17 @@ const ChatPage = () => {
           }
         );
 
-
-
       const savedMessage =
         response.data;
-
-
 
       dispatch(
         addMessage(savedMessage)
       );
 
-
-
       socket.emit(
         "sendMessage",
         savedMessage
       );
-
-
 
       setText("");
 
@@ -480,427 +467,12 @@ const ChatPage = () => {
         palette.background.default
       }
     >
-
-      {/* =========================
-          HEADER
-      ========================= */}
-
-      <Box
-        p="1rem"
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        borderBottom="1px solid #333"
-        bgcolor={
-          palette.background.alt
-        }
+      <Typography
+        p="2rem"
+        textAlign="center"
       >
-
-        <Box
-          display="flex"
-          alignItems="center"
-          gap="1rem"
-        >
-
-          <Avatar
-            src={
-              receiverUser?.picturePath?.startsWith(
-                "http"
-              )
-                ? receiverUser.picturePath
-                : `http://localhost:3001/assets/${receiverUser?.picturePath}`
-            }
-          />
-
-          <Box>
-
-            <Typography
-              fontWeight="bold"
-            >
-              {
-                receiverUser?.firstName
-              }
-              {" "}
-              {
-                receiverUser?.lastName
-              }
-            </Typography>
-
-            <Typography
-              fontSize="14px"
-              color={
-                isOnline
-                  ? "limegreen"
-                  : "gray"
-              }
-            >
-              {
-                isOnline
-                  ? "Online"
-                  : "Offline"
-              }
-            </Typography>
-
-          </Box>
-        </Box>
-      </Box>
-
-
-
-
-      {/* =========================
-          CHAT AREA
-      ========================= */}
-
-      <Box
-        flex="1"
-        overflow="auto"
-        p="1rem"
-      >
-
-        {messages.map(
-          (msg, index) => {
-
-            const ownMessage =
-              String(msg.sender) ===
-              String(currentUser._id);
-
-            return (
-
-              <Box
-                key={msg._id || index}
-                ref={
-                  index ===
-                  messages.length - 1
-                    ? scrollRef
-                    : null
-                }
-                display="flex"
-                justifyContent={
-                  ownMessage
-                    ? "flex-end"
-                    : "flex-start"
-                }
-                mb="1rem"
-              >
-
-                <Box
-                  sx={{
-                    backgroundColor:
-                      ownMessage
-                        ? "#1976d2"
-                        : "#2b2b2b",
-
-                    color: "white",
-
-                    padding: "0.8rem",
-
-                    borderRadius:
-                      "16px",
-
-                    maxWidth:
-                      "350px",
-
-                    wordBreak:
-                      "break-word",
-
-                    position:
-                      "relative",
-                  }}
-                >
-
-                  {/* DELETE BUTTON */}
-
-                  {ownMessage && (
-
-                    <IconButton
-                      onClick={() =>
-                        deleteMessage(
-                          msg._id
-                        )
-                      }
-                      sx={{
-                        position:
-                          "absolute",
-
-                        top: "-10px",
-
-                        right: "-10px",
-
-                        background:
-                          "#ff4444",
-
-                        color:
-                          "white",
-
-                        width: "28px",
-
-                        height: "28px",
-
-                        "&:hover": {
-                          background:
-                            "#cc0000",
-                        },
-                      }}
-                    >
-
-                      <DeleteIcon
-                        sx={{
-                          fontSize:
-                            "18px",
-                        }}
-                      />
-                    </IconButton>
-
-                  )}
-
-
-
-                  {/* TEXT */}
-
-                  {msg.text && (
-
-                    <Typography>
-                      {msg.text}
-                    </Typography>
-
-                  )}
-
-
-
-                  {/* IMAGE */}
-
-                  {msg.image && (
-
-                    <img
-                      src={msg.image}
-                      alt="chat"
-                      style={{
-                        width: "100%",
-                        marginTop:
-                          "10px",
-                        borderRadius:
-                          "10px",
-                      }}
-                    />
-
-                  )}
-
-
-
-                  {/* VIDEO */}
-
-                  {msg.video && (
-
-                    <video
-                      controls
-                      style={{
-                        width: "100%",
-                        marginTop:
-                          "10px",
-                        borderRadius:
-                          "10px",
-                      }}
-                    >
-                      <source
-                        src={msg.video}
-                      />
-                    </video>
-
-                  )}
-
-                </Box>
-              </Box>
-            );
-          }
-        )}
-      </Box>
-
-
-
-
-      {/* =========================
-          UPLOAD BAR
-      ========================= */}
-
-      {uploading && (
-
-        <Box
-          px="1rem"
-          pb="0.5rem"
-        >
-
-          <Typography
-            mb="0.5rem"
-          >
-            Uploading
-            {" "}
-            {uploadProgress}%
-          </Typography>
-
-          <LinearProgress
-            variant="determinate"
-            value={
-              uploadProgress
-            }
-          />
-        </Box>
-
-      )}
-
-
-
-
-      {/* =========================
-          PREVIEW
-      ========================= */}
-
-      {preview && (
-
-        <Box
-          p="1rem"
-          borderTop="1px solid #333"
-        >
-
-          {file?.type.startsWith(
-            "image"
-          ) ? (
-
-            <img
-              src={preview}
-              alt="preview"
-              width="120px"
-              style={{
-                borderRadius:
-                  "10px",
-              }}
-            />
-
-          ) : (
-
-            <video
-              src={preview}
-              width="180px"
-              controls
-              style={{
-                borderRadius:
-                  "10px",
-              }}
-            />
-
-          )}
-        </Box>
-
-      )}
-
-
-
-
-      {/* =========================
-          FOOTER
-      ========================= */}
-
-      <Box
-        p="1rem"
-        display="flex"
-        alignItems="center"
-        gap="1rem"
-        borderTop="1px solid #333"
-        bgcolor={
-          palette.background.alt
-        }
-      >
-
-        {/* IMAGE */}
-
-        <IconButton
-          component="label"
-        >
-
-          <ImageIcon />
-
-          <input
-            hidden
-            type="file"
-            accept="image/*"
-            onChange={
-              handleFileChange
-            }
-          />
-        </IconButton>
-
-
-
-        {/* VIDEO */}
-
-        <IconButton
-          component="label"
-        >
-
-          <VideocamIcon />
-
-          <input
-            hidden
-            type="file"
-            accept="video/*"
-            onChange={
-              handleFileChange
-            }
-          />
-        </IconButton>
-
-
-
-        {/* INPUT */}
-
-        <TextField
-          fullWidth
-          placeholder="Type message..."
-          value={text}
-          onChange={(e) =>
-            setText(
-              e.target.value
-            )
-          }
-          sx={{
-            backgroundColor:
-              palette.background.paper,
-            borderRadius:
-              "10px",
-          }}
-        />
-
-
-
-        {/* SEND */}
-
-        <Button
-          variant="contained"
-          disabled={uploading}
-          onClick={sendMessage}
-          endIcon={
-            uploading
-              ? (
-                <CircularProgress
-                  size={18}
-                  sx={{
-                    color:
-                      "white",
-                  }}
-                />
-              )
-              : (
-                <SendIcon />
-              )
-          }
-        >
-          {
-            uploading
-              ? "Uploading..."
-              : "Send"
-          }
-        </Button>
-      </Box>
+        Chat Page Working
+      </Typography>
     </Box>
   );
 };
