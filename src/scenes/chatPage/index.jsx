@@ -1,21 +1,8 @@
 import {
-  Avatar,
   Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  LinearProgress,
-  TextField,
   Typography,
   useTheme,
 } from "@mui/material";
-
-import ImageIcon from "@mui/icons-material/Image";
-import VideocamIcon from "@mui/icons-material/Videocam";
-import SendIcon from "@mui/icons-material/Send";
-import DeleteIcon from "@mui/icons-material/Delete";
-
-import axios from "axios";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -51,40 +38,10 @@ const ChatPage = () => {
     (state) => state.messages
   );
 
-  const socketUsers = useSelector(
-    (state) => state.socketUsers
-  );
-
   const [conversationId, setConversationId] =
     useState("");
 
-  const [receiverUser, setReceiverUser] =
-    useState(null);
-
-  const [text, setText] = useState("");
-
-  const [file, setFile] = useState(null);
-
-  const [preview, setPreview] =
-    useState("");
-
-  const [uploading, setUploading] =
-    useState(false);
-
-  const [uploadProgress, setUploadProgress] =
-    useState(0);
-
-  const scrollRef = useRef();
-
-
-
-  /* =========================
-      ONLINE STATUS
-  ========================= */
-
-  const isOnline = socketUsers.some(
-    (u) => u.userId === userId
-  );
+  const scrollRef = useRef(null);
 
 
 
@@ -98,10 +55,13 @@ const ChatPage = () => {
       socket.connect();
     }
 
-    socket.emit(
-      "addUser",
-      currentUser?._id
-    );
+    if (currentUser?._id) {
+
+      socket.emit(
+        "addUser",
+        currentUser._id
+      );
+    }
 
     socket.off("getMessage");
 
@@ -133,46 +93,6 @@ const ChatPage = () => {
     };
 
   }, [currentUser?._id, dispatch]);
-
-
-
-
-  /* =========================
-      GET RECEIVER
-  ========================= */
-
-  useEffect(() => {
-
-    const getReceiver = async () => {
-
-      try {
-
-        const response = await fetch(
-          `http://localhost:3001/users/${userId}`,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
-
-        const data =
-          await response.json();
-
-        setReceiverUser(data);
-
-      } catch (err) {
-
-        console.log(err);
-
-      }
-    };
-
-    getReceiver();
-
-  }, [userId, token]);
-
 
 
 
@@ -217,7 +137,6 @@ const ChatPage = () => {
       } catch (err) {
 
         console.log(err);
-
       }
     };
 
@@ -229,8 +148,11 @@ const ChatPage = () => {
       createConversation();
     }
 
-  }, [userId, currentUser?._id, token]);
-
+  }, [
+    userId,
+    currentUser?._id,
+    token,
+  ]);
 
 
 
@@ -266,159 +188,16 @@ const ChatPage = () => {
       } catch (err) {
 
         console.log(err);
-
       }
     };
 
     getMessages();
 
-  }, [conversationId, dispatch, token]);
-
-
-
-
-  /* =========================
-      SEND MESSAGE
-  ========================= */
-
-  const sendMessage = async () => {
-
-    if (!text && !file) return;
-
-    try {
-
-      setUploading(true);
-
-      setUploadProgress(0);
-
-      const formData =
-        new FormData();
-
-      formData.append(
-        "conversationId",
-        conversationId
-      );
-
-      formData.append(
-        "sender",
-        currentUser._id
-      );
-
-      formData.append(
-        "text",
-        text
-      );
-
-      if (file) {
-
-        formData.append(
-          "media",
-          file
-        );
-      }
-
-      const response =
-        await axios.post(
-          "http://localhost:3001/messages/send",
-          formData,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            onUploadProgress:
-              (
-                progressEvent
-              ) => {
-
-                const percent =
-                  Math.round(
-                    (
-                      progressEvent.loaded *
-                      100
-                    ) /
-                    progressEvent.total
-                  );
-
-                setUploadProgress(
-                  percent
-                );
-              },
-          }
-        );
-
-      const savedMessage =
-        response.data;
-
-      dispatch(
-        addMessage(savedMessage)
-      );
-
-      socket.emit(
-        "sendMessage",
-        savedMessage
-      );
-
-      setText("");
-
-      setFile(null);
-
-      setPreview("");
-
-      setUploading(false);
-
-      setUploadProgress(0);
-
-    } catch (err) {
-
-      console.log(err);
-
-      setUploading(false);
-
-    }
-  };
-
-
-
-
-  /* =========================
-      DELETE MESSAGE
-  ========================= */
-
-  const deleteMessage = async (
-    messageId
-  ) => {
-
-    try {
-
-      await axios.delete(
-        `http://localhost:3001/messages/${messageId}`,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
-      );
-
-      const updatedMessages =
-        messages.filter(
-          (msg) =>
-            msg._id !== messageId
-        );
-
-      dispatch(
-        setMessages(updatedMessages)
-      );
-
-    } catch (err) {
-
-      console.log(err);
-
-    }
-  };
-
+  }, [
+    conversationId,
+    dispatch,
+    token,
+  ]);
 
 
 
@@ -436,43 +215,28 @@ const ChatPage = () => {
 
 
 
-
-  /* =========================
-      FILE SELECT
-  ========================= */
-
-  const handleFileChange = (e) => {
-
-    const selected =
-      e.target.files[0];
-
-    if (!selected) return;
-
-    setFile(selected);
-
-    setPreview(
-      URL.createObjectURL(selected)
-    );
-  };
-
-
-
-
   return (
+
     <Box
       height="100vh"
       display="flex"
+      justifyContent="center"
+      alignItems="center"
       flexDirection="column"
       bgcolor={
         palette.background.default
       }
     >
+
       <Typography
-        p="2rem"
-        textAlign="center"
+        fontSize="2rem"
+        fontWeight="bold"
       >
         Chat Page Working
       </Typography>
+
+      <div ref={scrollRef}></div>
+
     </Box>
   );
 };
