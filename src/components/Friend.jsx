@@ -1,84 +1,251 @@
-import { PersonAddOutlined, PersonRemoveOutlined } from "@mui/icons-material";
-import { Box, IconButton, Typography, useTheme } from "@mui/material";
-import { useDispatch, useSelector } from "react-redux";
-import { setFriends } from "state";
-import FlexBetween from "./FlexBetween";
-import UserImage from "./UserImage";
-import { useNavigate } from "react-router-dom";
+import {
+  ManageAccountsOutlined,
+  PersonAddOutlined,
+  MessageOutlined,
+} from "@mui/icons-material";
 
-const Friend = ({ friendId, name, subtitle, userPicturePath }) => {
+import {
+  Box,
+  IconButton,
+  Typography,
+  useTheme,
+} from "@mui/material";
+
+import {
+  useDispatch,
+  useSelector,
+} from "react-redux";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  setFriends,
+} from "state";
+
+import FlexBetween from "./FlexBetween";
+
+import UserImage from "./UserImage";
+
+const Friend = ({
+  friendId,
+  name,
+  subtitle,
+  userPicturePath,
+}) => {
+
   const dispatch = useDispatch();
+
   const navigate = useNavigate();
 
-  const { _id } = useSelector((state) => state.user);
-  const token = useSelector((state) => state.token);
-  const friends = useSelector((state) => state.user.friends);
-
   const { palette } = useTheme();
-  const primaryLight = palette.primary.light;
-  const primaryDark = palette.primary.dark;
-  const main = palette.neutral.main;
-  const medium = palette.neutral.medium;
 
-  const isFriend = friends.find((f) => f._id === friendId);
+  const token = useSelector(
+    (state) => state.token
+  );
 
-  const patchFriend = async () => {
-    const response = await fetch(
-      `http://localhost:3001/users/${_id}/friends/${friendId}`, // ✅ FIXED URL
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+  const loggedInUser = useSelector(
+    (state) => state.user
+  );
+
+  const {
+    neutral,
+    primary,
+  } = palette;
+
+  /* =========================
+     CHECK FRIEND
+  ========================= */
+
+  const isFriend =
+    loggedInUser?.friends?.some(
+      (friend) => {
+
+        // IF FRIEND OBJECT
+        if (
+          typeof friend === "object"
+        ) {
+
+          return (
+            friend._id === friendId
+          );
+        }
+
+        // IF FRIEND ID STRING
+        return friend === friendId;
       }
     );
 
-    if (!response.ok) return console.log("Error:", response.status);
+  /* =========================
+     ADD / REMOVE FRIEND
+  ========================= */
 
-    const data = await response.json(); // ✅ FIXED
-    dispatch(setFriends({ friends: data }));
-  };
+  const patchFriend =
+    async () => {
+
+      try {
+
+        const response =
+          await fetch(
+            `http://localhost:3001/users/${loggedInUser._id}/friends/${friendId}`,
+            {
+              method: "PATCH",
+
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+
+                "Content-Type":
+                  "application/json",
+              },
+            }
+          );
+
+        // ERROR CHECK
+        if (!response.ok) {
+
+          const errorText =
+            await response.text();
+
+          console.log(
+            "Server Error:",
+            errorText
+          );
+
+          return;
+        }
+
+        const data =
+          await response.json();
+
+        dispatch(
+          setFriends({
+            friends: data,
+          })
+        );
+
+      } catch (err) {
+
+        console.log(
+          "Friend Error:",
+          err
+        );
+
+      }
+    };
 
   return (
     <FlexBetween>
+
+      {/* LEFT SIDE */}
       <FlexBetween gap="1rem">
-        <UserImage image={userPicturePath} size="55px" />
+
+        <UserImage
+          image={userPicturePath}
+          size="55px"
+        />
+
         <Box
-          onClick={() => {
-            navigate(`/profile/${friendId}`);
-            navigate(0);
-          }}
+          onClick={() =>
+            navigate(
+              `/profile/${friendId}`
+            )
+          }
         >
+
           <Typography
-            color={main}
+            color={neutral.dark}
             variant="h5"
             fontWeight="500"
             sx={{
               "&:hover": {
-                color: palette.primary.light,
-                cursor: "pointer",
+                color:
+                  primary.light,
+                cursor:
+                  "pointer",
               },
             }}
           >
             {name}
           </Typography>
-          <Typography color={medium} fontSize="0.75rem">
+
+          <Typography
+            color={neutral.medium}
+            fontSize="0.75rem"
+          >
             {subtitle}
           </Typography>
+
         </Box>
       </FlexBetween>
 
-      <IconButton
-        onClick={patchFriend}
-        sx={{ backgroundColor: primaryLight, p: "0.6rem" }} // ✅ FIXED
-      >
-        {isFriend ? (
-          <PersonRemoveOutlined sx={{ color: primaryDark }} />
-        ) : (
-          <PersonAddOutlined sx={{ color: primaryDark }} />
+      {/* RIGHT SIDE */}
+      <FlexBetween gap="0.5rem">
+
+        {/* MESSAGE ICON ONLY FRIEND */}
+        {isFriend && (
+
+          <IconButton
+            onClick={() =>
+              navigate(
+                `/chat/${friendId}`
+              )
+            }
+            sx={{
+              backgroundColor:
+                primary.light,
+
+              p: "0.6rem",
+            }}
+          >
+
+            <MessageOutlined
+              sx={{
+                color:
+                  primary.dark,
+              }}
+            />
+
+          </IconButton>
+
         )}
-      </IconButton>
+
+        {/* ADD REMOVE FRIEND */}
+        <IconButton
+          onClick={patchFriend}
+          sx={{
+            backgroundColor:
+              primary.light,
+
+            p: "0.6rem",
+          }}
+        >
+
+          {isFriend ? (
+
+            <ManageAccountsOutlined
+              sx={{
+                color:
+                  primary.dark,
+              }}
+            />
+
+          ) : (
+
+            <PersonAddOutlined
+              sx={{
+                color:
+                  primary.dark,
+              }}
+            />
+
+          )}
+
+        </IconButton>
+
+      </FlexBetween>
+
     </FlexBetween>
   );
 };
