@@ -1,7 +1,7 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import Friend from "components/Friend";
 import WidgetWrapper from "components/WidgetWrapper";
-import { useEffect , useCallback } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setFriends } from "state";
 
@@ -14,30 +14,33 @@ const FriendListWidget = ({ userId }) => {
   const friends =
     useSelector((state) => state.user?.friends || []);
 
-  const getFriends = useCallback(async () => {
-  try {
-    const res = await fetch(
-      `http://localhost:3001/users/${userId}/friends`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+  const getFriends = async () => {
 
-    const data = await res.json();
+    try {
 
-    dispatch(setFriends({ friends: data }));
-  } catch (err) {
-    console.log(err);
-  }
-}, [userId, token, dispatch]);
+      const res = await fetch(
+        `http://localhost:3001/users/${userId}/friends`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+
+      dispatch(setFriends({ friends: data }));
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
 
 
   useEffect(() => {
     getFriends();
-  }, [getFriends]);
+  }, [userId]);
 
 
 
