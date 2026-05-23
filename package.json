@@ -28,7 +28,7 @@
     "yup": "^1.7.1"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "scripts": {
     "start": "react-scripts start",
