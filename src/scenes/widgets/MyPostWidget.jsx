@@ -25,6 +25,7 @@ import WidgetWrapper from "components/WidgetWrapper";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setPosts } from "state";
+import API_BASE from "../../api";
 
 const MyPostWidget = ({ picturePath }) => {
   const dispatch = useDispatch();
@@ -50,8 +51,8 @@ const MyPostWidget = ({ picturePath }) => {
       const isVideo = file?.type?.startsWith("video");
 
       const url = isVideo
-        ? "http://localhost:3001/posts/create/video"
-        : "http://localhost:3001/posts/create/image";
+        ? `${API_BASE}/posts/create/video`
+        : `${API_BASE}/posts/create/image`;
 
       const formData = new FormData();
       formData.append("file", file);

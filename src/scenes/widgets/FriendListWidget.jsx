@@ -4,6 +4,7 @@ import WidgetWrapper from "components/WidgetWrapper";
 import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setFriends } from "state";
+import API_BASE from "../../api";
 
 const FriendListWidget = ({ userId }) => {
 
@@ -17,7 +18,7 @@ const FriendListWidget = ({ userId }) => {
   const getFriends = useCallback(async () => {
     try {
       const res = await fetch(
-        `http://localhost:3001/users/${userId}/friends`,
+        `${API_BASE}/users/${userId}/friends`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

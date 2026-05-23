@@ -25,6 +25,7 @@ import {
   setPost,
   deletePost,
 } from "state";
+import API_BASE from "../../api";
 
 const PostWidget = ({
   postId,
@@ -82,7 +83,7 @@ const PostWidget = ({
 
       const response =
         await fetch(
-          `http://localhost:3001/posts/${postId}/like`,
+          `${API_BASE}/posts/${postId}/like`,
           {
             method: "PATCH",
 
@@ -139,7 +140,7 @@ const PostWidget = ({
 
         const response =
           await fetch(
-            `http://localhost:3001/posts/${postId}`,
+            `${API_BASE}/posts/${postId}`,
             {
               method: "DELETE",
 
@@ -195,7 +196,7 @@ const PostWidget = ({
       return path;
     }
 
-    return `http://localhost:3001/assets/${path}`;
+    return `${API_BASE}/assets/${path}`;
   };
 
   const imageUrl =

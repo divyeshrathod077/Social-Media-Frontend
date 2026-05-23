@@ -27,6 +27,7 @@ import {
 import FlexBetween from "./FlexBetween";
 
 import UserImage from "./UserImage";
+import API_BASE from "../api";
 
 const Friend = ({
   friendId,
@@ -88,7 +89,7 @@ const Friend = ({
 
         const response =
           await fetch(
-            `http://localhost:3001/users/${loggedInUser._id}/friends/${friendId}`,
+            `${API_BASE}/users/${loggedInUser._id}/friends/${friendId}`,
             {
               method: "PATCH",
 
